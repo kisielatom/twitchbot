@@ -1,20 +1,30 @@
+use serde::Deserialize;
+
+use std::error::Error;
 use std::fs::File;
-use std::io::prelude::*;
+use std::io::BufReader;
 use std::path::Path;
 
-pub fn get_credentials() {
-    let path = Path::new("src/credentials.txt");
-    let display = path.display();
+#[derive(Deserialize, Debug)]
+pub struct Credentials {
+    pub channel: String,
+    pub botname: String,
+    pub oauth: String,
+}
 
-    let mut file = match File::open(&path){
-        Err(why) => panic!("Couldn't open file {}, because : {}", display,why),
-        Ok(file) => file,
-    };
+pub fn get_credentials() -> Credentials {
+    let path = Path::new("src/credentials.json");
+    let credentials = read_credentials_from_json(path).unwrap();
+    println!("{:#?}", credentials);
+    return credentials
+    
+}
 
-    let mut s = String::new();
-    match file.read_to_string(&mut s) {
-        Err(why) => panic!("couldn't read {}: {}", display, why),
-        Ok(_) => print!("{} contains:\n{}", display, s),
-    }
+fn read_credentials_from_json<P: AsRef<Path>>(path: P) -> Result<Credentials, Box<dyn Error>> {
+    let file = File::open(path)?;
+    let reader = BufReader::new(file);
 
+    let credentials = serde_json::from_reader(reader)?;
+
+    Ok(credentials)
 }
